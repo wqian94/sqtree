@@ -1,2 +1,2 @@
-sqtree
+Skip Quadtree
 ======
