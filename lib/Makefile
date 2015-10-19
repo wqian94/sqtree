@@ -27,9 +27,9 @@ NTHREADS ?= 1
 
 # for HTM
 #ITM ?= rh_htm_gl_wt
-#HTM_LIB ?= /home/qian/quadtree/quadtree/libitm.so
-#TC_MALLOC ?= /home/qian/quadtree/quadtree/libtcmalloc.so
-#TM_PRELOAD := export ITM_DEFAULT_METHOD=$(ITM);export LD_PRELOAD=$(HTM_LIB):$(TC_MALLOC):$$$$LD_PRELOAD;
+#HTM_LIB ?= /home/qian/sqtree/libitm.so
+TC_MALLOC ?= /home/qian/sqtree/libtcmalloc.so
+TM_PRELOAD := export ITM_DEFAULT_METHOD=$(ITM);export LD_PRELOAD=$(HTM_LIB):$(TC_MALLOC):$$$$LD_PRELOAD;
 
 # for toggling whether to run
 RUN ?= 1

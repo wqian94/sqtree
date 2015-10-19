@@ -30,7 +30,7 @@ CCFLAGS += -DINITIAL=$(INITIAL)
 endif
 
 # for DIMENSIONS
-DIMENSIONS ?= 3
+DIMENSIONS ?= 2
 CCFLAGS += -DDIMENSIONS=$(DIMENSIONS)
 
 TIME ?= 1# 1 second
@@ -43,7 +43,7 @@ CCFLAGS += -DVERBOSE
 endif
 
 CCFLAGS += -DTIME=$(TIME)LL -DWRATIO=$(WRATIO) -DDRATIO=$(DRATIO) \
-	-DHEADER=\"./Quadtree.h\" -DTYPE=Quadtree \
+	-DHEADER=\"Quadtree.h\" -DTYPE=Quadtree \
 	-DCONSTRUCTOR=Quadtree_init -DDESTRUCTOR=Quadtree_free \
 	-DINSERT=Quadtree_add -DQUERY=Quadtree_search -DDELETE=Quadtree_remove
 
