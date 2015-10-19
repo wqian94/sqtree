@@ -459,7 +459,6 @@ void test_quadtree_remove() {
     assertTrue(Quadtree_add(q1, p6), "Quadtree_add(q1, p6)");
     assertTrue(Quadtree_add(q1, p7), "Quadtree_add(q1, p7)");
 
-    print_Quadtree(q1);
     assertTrue(Quadtree_search(q1, p2), "Quadtree_search(q1, p2)");
     Quadtree_remove(q1, p2);
     assertFalse(Quadtree_search(q1, p2), "Quadtree_search(q1, p2)");
@@ -603,7 +602,7 @@ int main(int argc, char *argv[]) {
     start_test(test_quadtree_add, "Quadtree_add");
     start_test(test_quadtree_search, "Quadtree_search");
     start_test(test_quadtree_remove, "Quadtree_remove");
-    //start_test(test_randomized, "Randomized (in-environment)");
+    start_test(test_randomized, "Randomized (in-environment)");
     //start_test(test_performance, "Performance tests");
 
     printf("\n[Ending tests]\n");
