@@ -106,16 +106,16 @@ main-%:
 	$(MAKE) -e run-main
 
 .PHONY: test-%-correctness
-test-%-correctness: CFLAGS += -O0
+test-%-correctness: CFLAGS += -O0 -DDEBUG
 test-%-correctness: TESTFLAG += -DQUADTREE_TEST
 test-%-correctness:
-	$(MAKE) -e run-test OBJS="$(ALL_OBJS) $*/Quadtree.o" MTRACE=1 DEBUG=1 DIMENSIONS=2
+	$(MAKE) -e run-test OBJS="$(ALL_OBJS) $*/Quadtree.o" MTRACE=1 DEBUG=1
 
 .PHONY: test-%-performance
-test-%-performance: CFLAGS += -O0
+test-%-performance: CFLAGS += -O0 -DDEBUG
 test-%-performance: TESTFLAG += -DVERBOSE
 test-%-performance:
-	$(MAKE) -e run-test_perf OBJS="$(ALL_OBJTS) $*/Quadtree.o" GPROF=1 DIMENSIONS=2
+	$(MAKE) -e run-test_perf OBJS="$(ALL_OBJTS) $*/Quadtree.o" GPROF=1
 
 .PHONY: test-%
 test-%:

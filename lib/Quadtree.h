@@ -283,7 +283,7 @@ static uint8_t get_quadrant(Point *origin, Point *p) {
     register uint64_t i;
     uint8_t quadrant = 0;
     for (i = 0; i < D; i++)
-        quadrant |= ((p->data[i] >= origin->data[i] - PRECISION) & 1) << (D - i - 1);
+        quadrant |= ((p->data[i] >= origin->data[i] - PRECISION) & 1) << i;
     return quadrant;
 }
 
@@ -302,7 +302,7 @@ static Point get_new_center(Node *node, int8_t quadrant) {
     Point p;
     register uint64_t i;
     for (i = 0; i < D; i++)
-        p.data[i] = node->center.data[i] + (((quadrant >> (D - i - 1)) & 1) - 0.5) * 0.5 * node->length;
+        p.data[i] = node->center.data[i] + (((quadrant >> i) & 1) - 0.5) * 0.5 * node->length;
     return p;
 }
 

@@ -58,11 +58,15 @@ static inline void assert_false(char *file, int line, bool actual, char *text) {
 }
 
 static inline void assert_point(char *file, int line, Point expected, Point actual, char *text) {
-    printf("%s: line %4d: assert(%s == Point(%lf, %lf))...", file, line, text, expected.data[0], expected.data[1]);
+    char buffer[1000];
+    Point_string(&expected, buffer);
+    printf("%s: line %4d: assert(%s == %s)...", file, line, text, buffer);
     fflush(stdout);
     bool equals = Point_equals(&actual, &expected);
-    if (!equals)
-        printf("was actually Point(%lf, %lf)...", actual.data[0], actual.data[1]);
+    if (!equals) {
+        Point_string(&actual, buffer);
+        printf("was actually %s...", buffer);
+    }
     printf("%s\n", equals ? "\033[0;32mOK\033[m" : "\033[1;31mFAILED\033[m");
 
     TOTAL_ASSERTIONS++;

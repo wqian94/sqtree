@@ -253,7 +253,7 @@ bool Quadtree_remove_node(Node *node) {
     if (node->is_square) {
         register uint8_t num_children = 0, i;
         Node *child = NULL;
-        for (i = 0; i < 4; i++)
+        for (i = 0; i < (1 << D); i++)
             if (node->children[i] != NULL) {
                 num_children++;
                 child = node->children[i];
@@ -301,7 +301,7 @@ bool Quadtree_remove_node(Node *node) {
     // then, recurse up the parent as necessary
     if (parent != NULL) {
         register uint8_t num_children = 0, i;
-        for (i = 0; i < 4; i++)
+        for (i = 0; i < (1 << D); i++)
             num_children += parent->children[i] != NULL;
         if (num_children < 2)
             Quadtree_remove_node(parent);
@@ -385,7 +385,7 @@ bool Quadtree_free_helper(Node *node, QuadtreeFreeResult *result) {
     bool success = true;
     if (node->is_square) {
         register uint8_t i;
-        for (i = 0; i <4; i++)
+        for (i = 0; i < (1 << D); i++)
             if (node->children[i] != NULL) {
                 success &= Quadtree_free_helper(node->children[i], result);
                 node->children[i] = NULL;
