@@ -112,6 +112,7 @@ void test_in_range() {
     Point p1 = Point_from_array(coords);
     for (i = 0; i < D; i++) coords[i] = 2;
     Point p2 = Point_from_array(coords);
+    // Dynamically determine appropriate buffer sizes
     char buffer[1000], point_buffer[1000], node_buffer[1000];
 
     Node_string(node, node_buffer);
