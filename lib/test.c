@@ -53,7 +53,7 @@ void print_Quadtree(Quadtree *root) {
         printf(", down=%p", root->down);
 #endif
 
-    for (i = 0; i < (1 << D); i++) {
+    for (i = 0; i < (1LL << D); i++) {
         if (root->children[i] != NULL
                 #ifdef PARALLEL
                 && !root->children[i]->dirty
@@ -76,7 +76,7 @@ void print_Quadtree(Quadtree *root) {
             )
         print_Quadtree(root->up);
 
-    for (i = 0; i < (1 << D); i++) {
+    for (i = 0; i < (1LL << D); i++) {
         if (root->children[i] != NULL
                 #ifdef PARALLEL
                 && !root->children[i]->dirty
@@ -113,7 +113,7 @@ void test_in_range() {
     for (i = 0; i < D; i++) coords[i] = 2;
     Point p2 = Point_from_array(coords);
     // Dynamically determine appropriate buffer sizes
-    char buffer[1000], point_buffer[1000], node_buffer[1000];
+    char buffer[1000 + 9 * (1LL << D)], point_buffer[15 * D], node_buffer[1000 + 15 * (1LL << D)];
 
     Node_string(node, node_buffer);
 
@@ -135,9 +135,9 @@ void test_get_quadrant() {
     for (i = 0; i < D; i++) coords[i] = 0;
     Point origin = Point_from_array(coords);
 
-    Point points[1 << D];
-    uint8_t expected_quadrants[1 << D];
-    for (i = 0; i < (1 << D); i++) {
+    Point points[1LL << D];
+    uint64_t expected_quadrants[1LL << D];
+    for (i = 0; i < (1LL << D); i++) {
         for (j = 0; j < D; j++) {
             coords[j] = 2 * ((i >> j) & 1) - 1.0f;
         }
@@ -147,10 +147,10 @@ void test_get_quadrant() {
 
     char buffer[1000], str1[1000], str2[1000];
     Point_string(&origin, str1);
-    for (i = 0; i < (1 << D); i++) {
+    for (i = 0; i < (1LL << D); i++) {
         Point_string(points + i, str2);
         sprintf(buffer, "get_quadrant(%s, %s)", str1, str2);
-        assertLong(expected_quadrants[i], get_quadrant(&origin, &points[i]), buffer);
+        assertLong(expected_quadrants[i], (unsigned long long)get_quadrant(&origin, &points[i]), buffer);
     }
 }
 
@@ -245,11 +245,11 @@ void test_quadtree_add() {
     for (i = 0; i < D; i++) coords[i] = 4;
     assertPoint(Point_from_array(coords), square1->center, "square1->center");
 
-    sprintf(buffer, "q1->children[%u].is_square", get_quadrant(&q1->center, &p2));
+    sprintf(buffer, "q1->children[%llu].is_square", (unsigned long long)get_quadrant(&q1->center, &p2));
     assertTrue(square1->is_square, buffer);
 
-    sprintf(buffer, "(q1->children[%u]->children[%u] == NULL)",
-        get_quadrant(&q1->center, &p2), get_quadrant(&square1->center, &p3));
+    sprintf(buffer, "(q1->children[%llu]->children[%llu] == NULL)",
+        (unsigned long long)get_quadrant(&q1->center, &p2), (unsigned long long)get_quadrant(&square1->center, &p3));
     Node *q3 = square1->children[get_quadrant(&square1->center, &p3)];
     assertFalse(q3 == NULL, buffer);
 
@@ -259,27 +259,27 @@ void test_quadtree_add() {
         Point_string(&square1->center, str1);
         Point_string(&q3->center, str2);
         sprintf(buffer, "get_quadrant(%s, %s)", str1, str2);
-        uint8_t quadrant = 0;
+        uint64_t quadrant = 0;
         for (i = 0; i < D; i++)
             quadrant |= ((q3->center.data[i] >= square1->center.data[i] - PRECISION) & 1) << i;
-        assertLong(quadrant, get_quadrant(&square1->center, &q3->center), buffer);
+        assertLong((unsigned long long)quadrant, (unsigned long long)get_quadrant(&square1->center, &q3->center), buffer);
     }
     else {  // alert to problems
-        sprintf(buffer, "(q1->children[%u]->children[%u] is not NULL",
-            get_quadrant(&q1->center, &p2), get_quadrant(&square1->center, &p3));
+        sprintf(buffer, "(q1->children[%llu]->children[%llu] is not NULL",
+            (unsigned long long)get_quadrant(&q1->center, &p2), (unsigned long long)get_quadrant(&square1->center, &p3));
         assertError(buffer);
-        sprintf(buffer, "(q1->children[%u]->children[%u]->center is not NULL",
-            get_quadrant(&q1->center, &p2), get_quadrant(&square1->center, &p3));
+        sprintf(buffer, "(q1->children[%llu]->children[%llu]->center is not NULL",
+            (unsigned long long)get_quadrant(&q1->center, &p2), (unsigned long long)get_quadrant(&square1->center, &p3));
         assertError(buffer);
     }
 
-    sprintf(buffer, "(q1->children[%u]->children[0] == NULL)", get_quadrant(&q1->center, &p2));
+    sprintf(buffer, "(q1->children[%llu]->children[0] == NULL)", (unsigned long long)get_quadrant(&q1->center, &p2));
     assertFalse(square1->children[0] == NULL, buffer);
 
     Point_string(&square1->center, str1);
     Point_string(&q2->center, str2);
     sprintf(buffer, "get_quadrant(%s, %s)", str1, str2);
-    assertLong(0, get_quadrant(&square1->center, &q2->center), buffer);
+    assertLong(0, (unsigned long long)get_quadrant(&square1->center, &q2->center), buffer);
 
     printf("\n---Quadtree_add Inner Square Generation Test---\n");
     assertTrue(Quadtree_add(q1, p4), "Quadtree_add(q1, p4)");
@@ -290,36 +290,36 @@ void test_quadtree_add() {
         assertPoint(Point_from_array(coords), square2->center, "square2->center");
 
         if (square2->children[get_quadrant(&square2->center, &p4)] != NULL) {
-            sprintf(buffer, "square2->children[%u]->center", get_quadrant(&square2->center, &p4));
+            sprintf(buffer, "square2->children[%llu]->center", (unsigned long long)get_quadrant(&square2->center, &p4));
             assertPoint(p4, square2->children[get_quadrant(&square2->center, &p4)]->center, buffer);
         }
         else {
-            sprintf(buffer, "square2->children[%u]->center is not NULL", get_quadrant(&square2->center, &p4));
+            sprintf(buffer, "square2->children[%llu]->center is not NULL", (unsigned long long)get_quadrant(&square2->center, &p4));
             assertError(buffer);
         }
     }
     else {  // alert to problems
-        sprintf(buffer, "square1->children[%u] is not NULL", get_quadrant(&square1->center, &p4));
+        sprintf(buffer, "square1->children[%llu] is not NULL", (unsigned long long)get_quadrant(&square1->center, &p4));
         assertError(buffer);
-        sprintf(buffer, "square1->children[%u]->center is not NULL", get_quadrant(&square1->center, &p4));
+        sprintf(buffer, "square1->children[%llu]->center is not NULL", (unsigned long long)get_quadrant(&square1->center, &p4));
         assertError(buffer);
     }
 
     printf("\n---Quadtree_add Greater Depth Test---\n");
     assertTrue(Quadtree_add(q1, p5), "Quadtree_add(q1, p5)");
-    sprintf(buffer, "(q1->children[%u] != NULL)", get_quadrant(&q1->center, &p5));
+    sprintf(buffer, "(q1->children[%llu] != NULL)", (unsigned long long)get_quadrant(&q1->center, &p5));
     assertTrue(q1->children[get_quadrant(&q1->center, &p5)] != NULL, buffer);
     if (q1->children[get_quadrant(&q1->center, &p5)] != NULL) {
-        sprintf(buffer, "q1->children[%u]->is_square", get_quadrant(&q1->center, &p5));
+        sprintf(buffer, "q1->children[%llu]->is_square", (unsigned long long)get_quadrant(&q1->center, &p5));
         assertFalse(q1->children[get_quadrant(&q1->center, &p5)]->is_square, buffer);
-        sprintf(buffer, "q1->children[%u]->center", get_quadrant(&q1->center, &p5));
+        sprintf(buffer, "q1->children[%llu]->center", (unsigned long long)get_quadrant(&q1->center, &p5));
         for (i = 0; i < D; i++) coords[i] = -2;
         assertPoint(Point_from_array(coords), q1->children[get_quadrant(&q1->center, &p5)]->center, buffer);
     }
     else {
-        sprintf(buffer, "q1->children[%u]->is_square is not NULL", get_quadrant(&q1->center, &p5));
+        sprintf(buffer, "q1->children[%llu]->is_square is not NULL", (unsigned long long)get_quadrant(&q1->center, &p5));
         assertError(buffer);
-        sprintf(buffer, "q1->children[%u]->center is not NULL", get_quadrant(&q1->center, &p5));
+        sprintf(buffer, "q1->children[%llu]->center is not NULL", (unsigned long long)get_quadrant(&q1->center, &p5));
         assertError(buffer);
     }
 
@@ -335,40 +335,40 @@ void test_quadtree_add() {
         assertError("square3->center is not NULL");
 
     if (square3 != NULL && square3->children[get_quadrant(&square3->center, &p2)] != NULL) {
-        sprintf(buffer, "square3->children[%u]->center", get_quadrant(&square3->center, &p2));
+        sprintf(buffer, "square3->children[%llu]->center", (unsigned long long)get_quadrant(&square3->center, &p2));
         assertPoint(p2, square3->children[get_quadrant(&square3->center, &p2)]->center, buffer);
     }
     else {
-        sprintf(buffer, "square3->children[%u]->center is not NULL", get_quadrant(&square3->center, &p2));
+        sprintf(buffer, "square3->children[%llu]->center is not NULL", (unsigned long long)get_quadrant(&square3->center, &p2));
         assertError(buffer);
     }
 
     if (square3 != NULL && square3->children[get_quadrant(&square3->center, &p6)] != NULL) {
-        sprintf(buffer, "square3->children[%u]->center", get_quadrant(&square3->center, &p6));
+        sprintf(buffer, "square3->children[%llu]->center", (unsigned long long)get_quadrant(&square3->center, &p6));
         assertPoint(p6, square3->children[get_quadrant(&square3->center, &p6)]->center, buffer);
     }
     else {
-        sprintf(buffer, "square3->children[%u]->center is not NULL", get_quadrant(&square3->center, &p6));
+        sprintf(buffer, "square3->children[%llu]->center is not NULL", (unsigned long long)get_quadrant(&square3->center, &p6));
         assertError(buffer);
     }
 
     if (square3 != NULL && square3->children[get_quadrant(&square3->center, &p6)] != NULL &&
             square3->children[get_quadrant(&square3->center, &p6)]->up != NULL) {
-        sprintf(buffer, "square3->children[%u]->up->center", get_quadrant(&square3->center, &p6));
+        sprintf(buffer, "square3->children[%llu]->up->center", (unsigned long long)get_quadrant(&square3->center, &p6));
         assertPoint(p6, square3->children[get_quadrant(&square3->center, &p6)]->up->center, buffer);
     }
     else {
-        sprintf(buffer, "square3->children[%u]->up->center is not NULL", get_quadrant(&square3->center, &p6));
+        sprintf(buffer, "square3->children[%llu]->up->center is not NULL", (unsigned long long)get_quadrant(&square3->center, &p6));
         assertError(buffer);
     }
 
     if (square3 != NULL && square3->up != NULL) {
         if (square3->up->children[get_quadrant(&square3->up->center, &p6)] != NULL) {
-            sprintf(buffer, "square3->up->children[%u]->center", get_quadrant(&square3->up->center, &p6));
+            sprintf(buffer, "square3->up->children[%llu]->center", (unsigned long long)get_quadrant(&square3->up->center, &p6));
             assertPoint(p6, square3->up->children[get_quadrant(&square3->up->center, &p6)]->center, buffer);
         }
         else {
-            sprintf(buffer, "square3->up->children[%u]->center is not NULL", get_quadrant(&square3->up->center, &p6));
+            sprintf(buffer, "square3->up->children[%llu]->center is not NULL", (unsigned long long)get_quadrant(&square3->up->center, &p6));
             assertError(buffer);
         }
     }

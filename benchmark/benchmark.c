@@ -48,7 +48,8 @@ void* execute(void *op) {
 
     TYPE *root = packet->root;
     Point p_min = packet->p_min, p_max = packet->p_max;
-    uint32_t *mseed = Marsaglia_parallel_init(packet->vid);
+	srand(rand() + packet->vid * packet->vid);
+	srand(rand() + packet->vid);
     packet->inserts = 0;
     packet->queries = 0;
     packet->deletes = 0;
@@ -66,9 +67,9 @@ void* execute(void *op) {
 
     while (ACTIVE) {
         // writes vs reads
-        if (head == tail || Marsaglia_randoms(mseed) < WRATIO) {
+        if (head == tail || random() < WRATIO) {
             // deletes vs inserts
-            if (head != tail && Marsaglia_randoms(mseed) < DRATIO) {
+            if (head != tail && random() < DRATIO) {
                 Point p = pbuffer[tail];
                 tail = (tail + 1) % npoints;
 
@@ -83,7 +84,7 @@ void* execute(void *op) {
                 Point p;
                 register uint64_t i;
                 for (i = 0; i < D; i++)
-                    p.data[i] = p_min.data[i] + Marsaglia_randoms(mseed) * (p_max.data[i] - p_min.data[i]);
+                    p.data[i] = p_min.data[i] + random() * (p_max.data[i] - p_min.data[i]);
 
                 // within buffer
                 if ((head + 1) % npoints != tail) {
@@ -101,7 +102,7 @@ void* execute(void *op) {
         }
         else {
             uint64_t size = (head + npoints - tail) % npoints;
-            uint64_t index = (uint64_t)(size * Marsaglia_randoms(mseed));
+            uint64_t index = (uint64_t)(size * random());
 
 #ifdef COUNT_ALL
             QUERY(root, pbuffer[(tail + index) % npoints]);
@@ -119,7 +120,7 @@ void* execute(void *op) {
 }
 
 void test_random(const uint64_t seconds) {
-    Marsaglia_srand(seconds % ((1LL << 32) - 1));
+    srand(seconds % ((1LL << 32) - 1));
     pthread_mutex_attr_init();
 
     register uint64_t i;
@@ -150,7 +151,7 @@ void test_random(const uint64_t seconds) {
     for (i = 0; i < initial_population; i++) {
         register uint64_t j;
         for (j = 0; j < D; j++)
-            initial_actives[i].data[j] = (Marsaglia_random() - 0.5) * length;
+            initial_actives[i].data[j] = (random() - 0.5) * length;
         INSERT(root, initial_actives[i]);
     }
 
@@ -181,8 +182,6 @@ void test_random(const uint64_t seconds) {
     printf("\n[Estimated] {Inserts: %5.2lf%%    Queries: %5.2lf%%    Deletes: %5.2lf%%}\n",
         100.0 * WRATIO * (1 - DRATIO), 100.0 * (1 - WRATIO), 100.0 * WRATIO * DRATIO);
 #endif
-
-    Marsaglia_parallel_start(nthreads);
 
     OperationPacket packets[nthreads];
     Point p_min, p_max;
@@ -284,7 +283,7 @@ int main(int argc, char* argv[]) {
     mtrace();
 #endif
 
-    Marsaglia_srand(0);
+    srand(0);
 
 #ifdef VERBOSE
     printf("[Beginning tests]\n");

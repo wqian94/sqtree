@@ -25,6 +25,10 @@ Benchmarking suite utilities header
 #include HEADER
 #endif
 
+#define rand Marsaglia_rand
+#define srand Marsaglia_srand
+#define random Marsaglia_random
+
 typedef struct {
     bool on;
     uint32_t *food;

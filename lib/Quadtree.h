@@ -42,7 +42,7 @@ struct SerialSkipQuadtreeNode_t {
     float64_t length;
     Node *parent;
     Node *up, *down;
-    Node *children[1 << D];
+    Node *children[1LL << D];
 #ifdef QUADTREE_TEST
     uint64_t id;
 #endif
@@ -278,10 +278,10 @@ static bool in_range(Node *n, Point *p) {
  *
  * Returns the quadrant that p is in, relative to origin.
  */
-static uint8_t get_quadrant(Point *origin, Point *p) {
+static uint64_t get_quadrant(Point *origin, Point *p) {
     //return (p->data[0] >= origin->data[0]) + 2 * (p->data[1] >= origin->data[1]);
     register uint64_t i;
-    uint8_t quadrant = 0;
+    uint64_t quadrant = 0;
     for (i = 0; i < D; i++)
         quadrant |= ((p->data[i] >= origin->data[i] - PRECISION) & 1) << i;
     return quadrant;
@@ -298,7 +298,7 @@ static uint8_t get_quadrant(Point *origin, Point *p) {
  *
  * Returns the center point for the given quadrant of node.
  */
-static Point get_new_center(Node *node, int8_t quadrant) {
+static Point get_new_center(Node *node, uint64_t quadrant) {
     Point p;
     register uint64_t i;
     for (i = 0; i < D; i++)
@@ -316,15 +316,19 @@ static Point get_new_center(Node *node, int8_t quadrant) {
  * buffer - the buffer to write to
  */
 static inline void Node_string(Node *node, char *buffer) {
-    char pbuf[100];
+    char pbuf[15 * D];
     Point_string(&node->center, pbuf);
-    sprintf(buffer, "Node{id = %llu, is_square = %s, center = %s, length = %lf, parent = %s, up = %s, down = %s, children = {%s, %s, %s, %s}}",
+    sprintf(buffer, "Node{id = %llu, is_square = %s, center = %s, length = %lf, parent = %s, up = %s, down = %s, children = {%s",
         (unsigned long long)node->id,
         (node->is_square ? "YES" : "NO"), pbuf, node->length,
         (node->parent == NULL ? "NO" : "YES"), (node->up == NULL ? "NO" : "YES"),
         (node->down == NULL ? "NO" : "YES"),
-        (node->children[0] == NULL ? "NO" : "YES"), (node->children[1] == NULL ? "NO" : "YES"),
-        (node->children[2] == NULL ? "NO" : "YES"), (node->children[3] == NULL ? "NO" : "YES"));
+        (node->children[0] == NULL ? "NO" : "YES"));
+	uint64_t i = 1;
+	for (i = 1; i < (1LL << D); i++) {
+		sprintf(buffer, "%s, %s", buffer, (node->children[i] == NULL ? "NO" : "YES"));
+	}
+	sprintf(buffer, "%s}}", buffer);
     /*sprintf(buffer, "Node{is_square = %s, center = (%f, %f), length = %lf, parent = %p, up = %p, down = %p, children = {%p, %p, %p, %p}}",
         (node->is_square ? "YES" : "NO"), node->center->data[0], node->center->data[1], node->length,
         node->parent, node->up, node->down,

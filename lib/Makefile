@@ -28,7 +28,8 @@ NTHREADS ?= 1
 # for HTM
 #ITM ?= rh_htm_gl_wt
 #HTM_LIB ?= /home/qian/sqtree/libitm.so
-TC_MALLOC ?= /home/qian/sqtree/libtcmalloc.so
+#TC_MALLOC ?= /home/qian/sqtree/libtcmalloc.so
+TC_MALLOC ?= ../libtcmalloc.so
 TM_PRELOAD := export ITM_DEFAULT_METHOD=$(ITM);export LD_PRELOAD=$(HTM_LIB):$(TC_MALLOC):$$$$LD_PRELOAD;
 
 # for toggling whether to run
@@ -66,6 +67,9 @@ endif
 ifdef DEBUG
 CCFLAGS += -DDEBUG
 endif
+
+# for verbosity in benchmark
+VERBOSE ?= 0
 
 # for dimensions
 DIMENSIONS ?= 3
@@ -140,6 +144,7 @@ benchmark-%-O3:
 
 .PHONY: benchmark-%
 benchmark-%:
+	cd ../benchmark;$(MAKE) -e -B
 	mkdir -p benchmarks/bin benchmarks/results
 	$(MAKE) -e run-benchmark-benchmark OBJS="$(ALL_OBJS) $*/Quadtree.o" CFLAGS="$(CFLAGS) -$(OFLAG)"
 

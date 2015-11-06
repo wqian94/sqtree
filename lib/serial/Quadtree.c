@@ -34,7 +34,7 @@ Node* Node_init(float64_t length, Point center) {
     node->up = NULL;
     node->down = NULL;
     uint64_t i;
-    for(i = 0; i < (1 << D); i++) {
+    for(i = 0; i < (1LL << D); i++) {
         node->children[i] = NULL;
     }
 #ifdef QUADTREE_TEST
@@ -76,7 +76,7 @@ bool Quadtree_search_helper(Node *node, Point *p) {
     if (!in_range(node, p))
         return false;
 
-    register uint8_t quadrant = get_quadrant(&node->center, p);
+    register uint64_t quadrant = get_quadrant(&node->center, p);
 
     // if the target child is NULL, we try to drop down a level
     if (node->children[quadrant] == NULL) {
@@ -166,7 +166,7 @@ Node* Quadtree_add_helper(Node *node, Point *p, const uint64_t gap_depth) {
     }
 
     // time to try inserting onto this level
-    register uint8_t quadrant = get_quadrant(&parent->center, p);
+    register uint64_t quadrant = get_quadrant(&parent->center, p);
 
     // if the slot is empty, it's trivial
     if (parent->children[quadrant] == NULL) {
@@ -179,12 +179,12 @@ Node* Quadtree_add_helper(Node *node, Point *p, const uint64_t gap_depth) {
         Node *sibling = parent->children[quadrant];
 
         // create a new square to contain the sibling and the new node
-        uint8_t square_quadrant = quadrant;
+        uint64_t square_quadrant = quadrant;
         Node *square = Quadtree_init(0.5 * parent->length, get_new_center(parent, quadrant));
         square->parent = parent;
 
         // now, we keep splitting until the new node and the sibling are in different quadrants
-        register uint8_t sibling_quadrant;
+        register uint64_t sibling_quadrant;
         while ( (sibling_quadrant = get_quadrant(&square->center, &sibling->center)) ==
                 (quadrant = get_quadrant(&square->center, &new_node->center))) {
             Point new_square_center = get_new_center(square, quadrant);
@@ -251,9 +251,9 @@ bool Quadtree_remove_node(Node *node) {
 
     // if is square, determine whether need to remove, and if so, which node to move up
     if (node->is_square) {
-        register uint8_t num_children = 0, i;
+        register uint64_t num_children = 0, i;
         Node *child = NULL;
-        for (i = 0; i < (1 << D); i++)
+        for (i = 0; i < (1LL << D); i++)
             if (node->children[i] != NULL) {
                 num_children++;
                 child = node->children[i];
@@ -300,8 +300,8 @@ bool Quadtree_remove_node(Node *node) {
 
     // then, recurse up the parent as necessary
     if (parent != NULL) {
-        register uint8_t num_children = 0, i;
-        for (i = 0; i < (1 << D); i++)
+        register uint64_t num_children = 0, i;
+        for (i = 0; i < (1LL << D); i++)
             num_children += parent->children[i] != NULL;
         if (num_children < 2)
             Quadtree_remove_node(parent);
@@ -331,7 +331,7 @@ bool Quadtree_remove_helper(Node *node, Point *p) {
     if (!in_range(node, p))
         return false;
 
-    register uint8_t quadrant = get_quadrant(&node->center, p);
+    register uint64_t quadrant = get_quadrant(&node->center, p);
 
     // if the target child is NULL, we try to drop down a level
     if (node->children[quadrant] == NULL) {
@@ -384,8 +384,8 @@ bool Quadtree_remove(Quadtree *node, Point p) {
 bool Quadtree_free_helper(Node *node, QuadtreeFreeResult *result) {
     bool success = true;
     if (node->is_square) {
-        register uint8_t i;
-        for (i = 0; i < (1 << D); i++)
+        register uint64_t i;
+        for (i = 0; i < (1LL << D); i++)
             if (node->children[i] != NULL) {
                 success &= Quadtree_free_helper(node->children[i], result);
                 node->children[i] = NULL;

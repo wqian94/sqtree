@@ -38,7 +38,6 @@ uint32_t MarsagliaXOR(uint32_t* seed) {
     return x & 0x7FFFFFFF;
 }
 
-// Make thread-local
 static __thread uint32_t Marsaglia_seed;
 
 uint32_t Marsaglia_rand() {
