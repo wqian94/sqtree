@@ -1,0 +1,57 @@
+#!/bin/bash
+
+PARALLEL=""
+NUMA=""
+TRIALS=5
+OTHER=""
+SUBTYPE=""
+TIME=10
+
+function run {
+    PARALLEL=""
+    SUBTYPE=$1
+    NTHREADS=$2
+    WRATIO=$3
+    INITIAL=$4
+    DIMENSIONS=$5
+    TIMEOUTS=""
+
+    cd benchmark
+    make -B $PARALLEL TIME=$TIME WRATIO=$WRATIO NTHREADS=$NTHREADS INITIAL=$INITIAL DIMENSIONS=$DIMENSIONS
+    TARGET=benchmarks/benchmark-results/initial-$INITIAL/wratio-$WRATIO/$SUBTYPE-O3/threads-$NTHREADS
+    cd ../lib
+
+    if [ "$SUBTYPE" == "parallel_tm" ] || [ "$SUBTYPE" == "parallel_tm_cqt" ]
+    then
+        PARALLEL=""
+    fi
+
+    if [ $INITIAL -eq 10000000 ]
+    then
+        TIMEOUTS="TIMEOUT=20s"
+    fi
+
+    echo -e "\nNow running $SUBTYPE, $DIMENSIONS dimensions, $NTHREADS thread(s), WRATIO=$WRATIO, INITIAL=$INITIAL\n"
+
+    make -B benchmark-$SUBTYPE-O3 $PARALLEL TRIALS=5 NTHREADS=$NTHREADS DIMENSIONS=$DIMENSIONS $TIMEOUTS
+    mkdir -p $TARGET
+    mv benchmarks/results/* $TARGET
+    cd ..
+}
+
+for d in {2..5}
+do
+    for i in 1000000
+    do
+        for j in 0 0.01 0.1
+        do
+            for k in 1
+            do
+                for m in "serial"
+                do
+                    run $m $k $j $i $d
+                done
+            done
+        done
+    done
+done
