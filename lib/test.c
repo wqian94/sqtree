@@ -4,6 +4,7 @@ Testing suite for correctness of Quadtrees
 
 #include "test.h"
 
+extern __thread rlu_thread_data_t *rlu_self;
 extern bool in_range(Node*, Point*);
 extern void Point_string(Point*, char*);
 
@@ -125,6 +126,7 @@ void test_in_range() {
     sprintf(buffer, "in_range(node, %s)", point_buffer);
     assertFalse(in_range(node, &p2), buffer);
 
+    printf("%lu\n", rlu_self->run_counter);
     Quadtree_free(node);
 }
 
@@ -594,6 +596,11 @@ int main(int argc, char *argv[]) {
     mtrace();
     Marsaglia_srand(time(NULL));
     printf("[Beginning tests]\n");
+
+    // initialize RLU
+    RLU_INIT(RLU_TYPE_FINE_GRAINED, 8);
+    rlu_self = (rlu_thread_data_t*)malloc(sizeof(*rlu_self));
+    RLU_THREAD_INIT(rlu_self);
     
     start_test(test_sizes, "Struct sizes");
     start_test(test_in_range, "in_range");
@@ -605,6 +612,10 @@ int main(int argc, char *argv[]) {
     start_test(test_quadtree_remove, "Quadtree_remove");
     start_test(test_randomized, "Randomized (in-environment)");
     //start_test(test_performance, "Performance tests");
+
+    // end RLU
+    RLU_THREAD_FINISH(rlu_self);
+    free(rlu_self);
 
     printf("\n[Ending tests]\n");
     printf("\033[7;33m=============================================\n");

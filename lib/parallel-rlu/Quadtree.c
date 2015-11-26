@@ -1,5 +1,5 @@
 /**
-Naive serial implementation of compressed skip quadtree
+Parallel implementation of compressed skip quadtree using RLU
 */
 
 #include <assert.h>
@@ -8,6 +8,9 @@ Naive serial implementation of compressed skip quadtree
 #include "../types.h"
 #include "../Quadtree.h"
 #include "../Point.h"
+
+// rlu_self
+rlu_thread_data_t *rlu_self = NULL;
 
 // rand() functions
 #ifdef QUADTREE_TEST
@@ -26,7 +29,7 @@ uint64_t QUADTREE_NODE_COUNT = 0;
 #endif
 
 Node* Node_init(float64_t length, Point center) {
-    Node *node = (Node*)malloc(sizeof(Node));
+    Node *node = (Node*)RLU_ALLOC(sizeof(Node));
     node->is_square = false;
     node->length = length;
     node->center = center;
@@ -57,7 +60,7 @@ Quadtree* Quadtree_init(float64_t length, Point center) {
  * node - the node to be freed
  */
 static inline void Node_free(Node *node) {
-    free((void*)node);
+    RLU_FREE(rlu_self, (void*)node);
 }
 
 /*
@@ -81,7 +84,7 @@ bool Quadtree_search_helper(Node *node, Point *p) {
     // if the target child is NULL, we try to drop down a level
     if (node->children[quadrant] == NULL) {
         if (node->down != NULL)
-            return Quadtree_search_helper(node->down, p);
+            return Quadtree_search_helper((Node*)RLU_DEREF(rlu_self, node->down), p);
         // otherwise, we're on the bottom-most level and just can't find the point
         else
             return false;
@@ -106,13 +109,21 @@ bool Quadtree_search_helper(Node *node, Point *p) {
 }
 
 bool Quadtree_search(Quadtree *node, Point p) {
+    RLU_READER_LOCK(rlu_self);
+
+    node = (Quadtree*)RLU_DEREF(rlu_self, node);
+
     if (node == NULL)
         return false;
 
     while (node->up != NULL)
         node = node->up;
 
-    return Quadtree_search_helper(node, &p);
+    bool found = Quadtree_search_helper(node, &p);
+
+    RLU_READER_UNLOCK(rlu_self);
+
+    return found;
 }
 
 /*
@@ -215,6 +226,8 @@ Node* Quadtree_add_helper(Node *node, Point *p, const uint64_t gap_depth) {
 }
 
 bool Quadtree_add(Quadtree *node, Point p) {
+    RLU_READER_LOCK(rlu_self);
+
     while (rand() % 100 < 50) {
         if (node->up == NULL) {
             node->up = Quadtree_init(node->length, node->center);
@@ -230,7 +243,11 @@ bool Quadtree_add(Quadtree *node, Point p) {
         node = node->up;
     }
 
-    return Quadtree_add_helper(node, &p, gap_depth) != NULL;
+    bool success = Quadtree_add_helper(node, &p, gap_depth) != NULL;
+
+    RLU_READER_UNLOCK(rlu_self);
+
+    return success;
 }
 
 /*
@@ -362,10 +379,16 @@ bool Quadtree_remove_helper(Node *node, Point *p) {
 }
 
 bool Quadtree_remove(Quadtree *node, Point p) {
+    RLU_READER_LOCK(rlu_self);
+
     while (node->up != NULL)
         node = node->up;
 
-    return Quadtree_remove_helper(node, &p);
+    bool success = Quadtree_remove_helper(node, &p);
+
+    RLU_READER_UNLOCK(rlu_self);
+
+    return success;
 }
 
 /*
@@ -408,6 +431,10 @@ bool Quadtree_free_helper(Node *node, QuadtreeFreeResult *result) {
 }
 
 QuadtreeFreeResult Quadtree_free(Quadtree *root) {
+    // free is not a threadsafe call, disable RLU free list caching
+    rlu_thread_data_t *old_rlu_self = rlu_self;
+    rlu_self = NULL;
+
     QuadtreeFreeResult result = (QuadtreeFreeResult){ .total = 0, .leaf = 0, .levels = 0 };
 
     while (root->up != NULL)
@@ -418,6 +445,8 @@ QuadtreeFreeResult Quadtree_free(Quadtree *root) {
         result.levels += Quadtree_free_helper(root, &result);
         root = next_root;
     }
+
+    rlu_self = old_rlu_self;
 
     return result;
 }

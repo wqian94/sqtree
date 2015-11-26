@@ -13,11 +13,12 @@ Testing suite utilities header
 #include <assert.h>
 #include <mcheck.h>
 
-#include "types.h"
 #include "assertions.h"
+#include "types.h"
 #include "util.h"
 #include "Quadtree.h"
 
+extern rlu_thread_data_t *rlu_self;
 extern uint32_t Marsaglia_rand();
 #define rand() Marsaglia_rand()
 

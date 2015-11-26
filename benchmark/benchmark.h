@@ -15,8 +15,8 @@ Benchmarking suite utilities header
 #include <assert.h>
 #include <mcheck.h>
 
-#include "types.h"
 #include "assertions.h"
+#include "types.h"
 #include "util.h"
 
 #if defined (TIME) && defined (WRATIO) && defined (DRATIO) && defined (TYPE) && defined (CONSTRUCTOR) && defined (INSERT) && defined (QUERY) && defined (DELETE) && defined (DESTRUCTOR) && defined(HEADER)
@@ -28,6 +28,7 @@ Benchmarking suite utilities header
 #define rand Marsaglia_rand
 #define srand Marsaglia_srand
 #define random Marsaglia_random
+extern rlu_thread_data_t *rlu_self;
 
 typedef struct {
     bool on;

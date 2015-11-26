@@ -46,6 +46,7 @@ static volatile bool STARTED = false, ACTIVE = true;
 void* execute(void *op) {
     OperationPacket *packet = (OperationPacket*)op;
 
+    // read initialization information from OperationPacket
     TYPE *root = packet->root;
     Point p_min = packet->p_min, p_max = packet->p_max;
 	srand(rand() + packet->vid * packet->vid);
@@ -54,16 +55,24 @@ void* execute(void *op) {
     packet->queries = 0;
     packet->deletes = 0;
 
+    // prepare point buffer
     const uint64_t npoints = min(2 * packet->active_size, 1000);
     Point *pbuffer = (Point*)malloc(sizeof(*pbuffer) * npoints);  // ``active" points
     uint64_t head = 0, tail = 0;
     for (head = 0; head < npoints; head++)
         pbuffer[head] = packet->actives[head];
 
+    // set up RLU
+    RLU_THREAD_INIT(rlu_self);
+
     packet->ready = true;
 
     // wait to begin
     while (!STARTED);
+
+    /*
+    ** BENCHMARKING BEGINS
+    */
 
     while (ACTIVE) {
         // writes vs reads
@@ -113,18 +122,29 @@ void* execute(void *op) {
         }
     }
 
+    /*
+    ** BENCHMARKING ENDS
+    */
+
+    // clear out the point buffer
     free(pbuffer);
 
+    // end RLU on thread
+    RLU_THREAD_FINISH(rlu_self);
+
+    // ensure thread exits
     pthread_exit(0);
     return NULL;
 }
 
 void test_random(const uint64_t seconds) {
+    // seed the RNG based on time to run
     srand(seconds % ((1LL << 32) - 1));
     pthread_mutex_attr_init();
 
     register uint64_t i;
 
+    // initialize the root of the tree
     float64_t length = 1LL << 32;
     Point root_point;
     for (i = 0; i < D; i++)
@@ -132,32 +152,6 @@ void test_random(const uint64_t seconds) {
     TYPE *root = CONSTRUCTOR(length, root_point);
 
     test_rand_off();
-
-#ifdef VERBOSE
-    printf("Dimensions: %llu\n", (unsigned long long)D);
-#endif
-
-#ifdef INITIAL
-    const uint64_t initial_population = INITIAL;
-#else
-    const uint64_t initial_population = 1000000;
-#endif
-
-#ifdef VERBOSE
-    printf("Populating tree with %llu nodes...\n", (unsigned long long)initial_population);
-#endif
-
-    Point *initial_actives = (Point*)malloc(sizeof(*initial_actives) * initial_population);
-    for (i = 0; i < initial_population; i++) {
-        register uint64_t j;
-        for (j = 0; j < D; j++)
-            initial_actives[i].data[j] = (random() - 0.5) * length;
-        INSERT(root, initial_actives[i]);
-    }
-
-#ifdef VERBOSE
-    printf("Running for %llu seconds\n", (unsigned long long)seconds);
-#endif
 
 #ifdef PARALLEL
 
@@ -179,10 +173,46 @@ void test_random(const uint64_t seconds) {
 #endif
 
 #ifdef VERBOSE
+    printf("Dimensions: %llu\n", (unsigned long long)D);
+#endif
+
+    // populate the tree with some initial nodes
+
+#ifdef INITIAL
+    const uint64_t initial_population = INITIAL;
+#else
+    const uint64_t initial_population = 1000000;
+#endif
+
+#ifdef VERBOSE
+    printf("Populating tree with %llu nodes...\n", (unsigned long long)initial_population);
+#endif
+
+    // initialize RLU
+
+    // type: FINE/COARSE, max_write_sets: 1 if COARSE
+    RLU_INIT(RLU_TYPE_FINE_GRAINED, nthreads);
+
+    RLU_THREAD_INIT(rlu_self);
+    Point *initial_actives = (Point*)malloc(sizeof(*initial_actives) * initial_population);
+    for (i = 0; i < initial_population; i++) {
+        register uint64_t j;
+        for (j = 0; j < D; j++)
+            initial_actives[i].data[j] = (random() - 0.5) * length;
+        INSERT(root, initial_actives[i]);
+    }
+    RLU_THREAD_FINISH(rlu_self);
+
+#ifdef VERBOSE
+    printf("Running for %llu seconds\n", (unsigned long long)seconds);
+#endif
+
+#ifdef VERBOSE
     printf("\n[Estimated] {Inserts: %5.2lf%%    Queries: %5.2lf%%    Deletes: %5.2lf%%}\n",
         100.0 * WRATIO * (1 - DRATIO), 100.0 * (1 - WRATIO), 100.0 * WRATIO * DRATIO);
 #endif
 
+    // prepare initialization for each thread
     OperationPacket packets[nthreads];
     Point p_min, p_max;
     for (i = 0; i < D; i++) {
@@ -207,6 +237,11 @@ void test_random(const uint64_t seconds) {
 
     pthread_t threads[nthreads];
 
+    /*
+    ** PARALLEL SECTION BEGINS
+    */
+
+    // start threads
     for (i = 0; i < nthreads; i++)
         pthread_create(threads + i, NULL, execute, (void*)(packets + i));
 
@@ -219,21 +254,34 @@ void test_random(const uint64_t seconds) {
     struct timeval start, end;
     gettimeofday(&start, NULL);
 
+    /*
+    ** BENCHMARKING BEGINS
+    */
+
     STARTED = true;  // threads can start now
 
     sleep(seconds);
 
     ACTIVE = false;  // threads should stop now
 
+    /*
+    ** BENCHMARKING ENDS
+    */
+
     for (i = 0; i < nthreads; i++) {
         pthread_join(threads[i], NULL);
     }
+
+    /*
+    ** PARALLEL SECTION ENDS
+    */
 
     gettimeofday(&end, NULL);
     int64_t time_seconds = end.tv_sec - start.tv_sec;
     int64_t time_microseconds = end.tv_usec - start.tv_usec;
     float64_t total_seconds = time_seconds + time_microseconds * 1e-6;
 
+    // aggregate data
     uint64_t inserts = 0, queries = 0, deletes = 0;
     for (i = 0; i < nthreads; i++) {
         inserts += packets[i].inserts;
@@ -285,6 +333,8 @@ int main(int argc, char* argv[]) {
 
     srand(0);
 
+    rlu_self = (rlu_thread_data_t*)malloc(sizeof(*rlu_self));
+
 #ifdef VERBOSE
     printf("[Beginning tests]\n");
     char testname[128];
@@ -294,6 +344,8 @@ int main(int argc, char* argv[]) {
 #else
     test();
 #endif
+
+    free(rlu_self);
 
     return 0;
 #else

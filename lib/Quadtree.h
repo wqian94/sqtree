@@ -9,8 +9,9 @@ Interface for Quadtree data structure
 #include <pthread.h>
 #include <stdio.h>
 
-#include "util.h"
+
 #include "types.h"
+#include "util.h"
 #include "Point.h"
 
 #ifdef PARALLEL
@@ -19,6 +20,8 @@ typedef volatile struct ParallelSkipQuadtreeNode_t Node;
 typedef struct SerialSkipQuadtreeNode_t Node;
 #endif
 typedef Node Quadtree;
+
+extern rlu_thread_data_t *rlu_self;
 
 /*
  * struct SerialSkipQuadtreeNode_t

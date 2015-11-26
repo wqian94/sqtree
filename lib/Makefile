@@ -9,6 +9,7 @@ CPU_NODE := 0
 NOW := $(shell date -u +%s%N)
 
 HEADERS := \
+    rlu.h \
 	util.h \
 	types.h \
 	Point.h \
@@ -18,7 +19,7 @@ TEST_HEADERS := \
 	test.h \
 	assertions.h
 
-ALL_OBJS := Point.o util.o
+ALL_OBJS := rlu.o util.o Point.o
 
 .PRECIOUS: benchmark.o
 
@@ -119,7 +120,7 @@ test-%-correctness:
 test-%-performance: CFLAGS += -O0 -DDEBUG
 test-%-performance: TESTFLAG += -DVERBOSE
 test-%-performance:
-	$(MAKE) -e run-test_perf OBJS="$(ALL_OBJTS) $*/Quadtree.o" GPROF=1
+	$(MAKE) -e run-test_perf OBJS="$(ALL_OBJS) $*/Quadtree.o" GPROF=1
 
 .PHONY: test-%
 test-%:
@@ -144,7 +145,7 @@ benchmark-%-O3:
 
 .PHONY: benchmark-%
 benchmark-%:
-	cd ../benchmark;$(MAKE) -e -B
+	cd ../benchmark;$(MAKE) -Be
 	mkdir -p benchmarks/bin benchmarks/results
 	$(MAKE) -e run-benchmark-benchmark OBJS="$(ALL_OBJS) $*/Quadtree.o" CFLAGS="$(CFLAGS) -$(OFLAG)"
 
@@ -176,4 +177,4 @@ compile-%: %.o
 
 .PHONY: clean
 clean:
-	-$(RM) $(OBJS) main.o test.o *.o
+	find *.o | grep -v 'benchmark.o' | $(RM) $(OBJS)
