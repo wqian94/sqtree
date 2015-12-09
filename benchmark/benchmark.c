@@ -63,6 +63,7 @@ void* execute(void *op) {
         pbuffer[head] = packet->actives[head];
 
     // set up RLU
+    rlu_self = (rlu_thread_data_t*)malloc(sizeof(*rlu_self));
     RLU_THREAD_INIT(rlu_self);
 
     packet->ready = true;
@@ -131,6 +132,7 @@ void* execute(void *op) {
 
     // end RLU on thread
     RLU_THREAD_FINISH(rlu_self);
+    free(rlu_self);
 
     // ensure thread exits
     pthread_exit(0);
@@ -193,6 +195,8 @@ void test_random(const uint64_t seconds) {
     // type: FINE/COARSE, max_write_sets: 1 if COARSE
     RLU_INIT(RLU_TYPE_FINE_GRAINED, nthreads);
 
+    rlu_self = (rlu_thread_data_t*)malloc(sizeof(*rlu_self));
+
     RLU_THREAD_INIT(rlu_self);
     Point *initial_actives = (Point*)malloc(sizeof(*initial_actives) * initial_population);
     for (i = 0; i < initial_population; i++) {
@@ -202,6 +206,8 @@ void test_random(const uint64_t seconds) {
         INSERT(root, initial_actives[i]);
     }
     RLU_THREAD_FINISH(rlu_self);
+
+    free(rlu_self);
 
 #ifdef VERBOSE
     printf("Running for %llu seconds\n", (unsigned long long)seconds);
@@ -332,8 +338,6 @@ int main(int argc, char* argv[]) {
 #endif
 
     srand(0);
-
-    rlu_self = (rlu_thread_data_t*)malloc(sizeof(*rlu_self));
 
 #ifdef VERBOSE
     printf("[Beginning tests]\n");

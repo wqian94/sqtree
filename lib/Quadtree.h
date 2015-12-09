@@ -15,13 +15,13 @@ Interface for Quadtree data structure
 #include "Point.h"
 
 #ifdef PARALLEL
-typedef volatile struct ParallelSkipQuadtreeNode_t Node;
+typedef struct SerialSkipQuadtreeNode_t Node;
 #else
 typedef struct SerialSkipQuadtreeNode_t Node;
 #endif
 typedef Node Quadtree;
 
-extern rlu_thread_data_t *rlu_self;
+extern __thread rlu_thread_data_t *rlu_self;
 
 /*
  * struct SerialSkipQuadtreeNode_t
@@ -235,11 +235,7 @@ QuadtreeFreeResult Quadtree_free(Quadtree *root);
  * Returns whether the node is valid for use.
  */
 static inline bool Node_valid(Node *node) {
-    return node != NULL
-#ifdef PARALLEL
-        && !node->dirty
-#endif
-        ;
+    return node != NULL;
 }
 
 /*
@@ -355,12 +351,7 @@ static void print(Node *n) {
             !Node_valid(n->children[1]) ? NULL : n->children[1],
             !Node_valid(n->children[2]) ? NULL : n->children[2],
             !Node_valid(n->children[3]) ? NULL : n->children[3],
-#ifdef PARALLEL
-            n->dirty ? "true" : "false",
-            &n->lock
-#else
             "false", NULL
-#endif
             );
     }
 }

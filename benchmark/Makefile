@@ -4,6 +4,7 @@ SHELL := /bin/bash
 
 CC := gcc
 CFLAGS := -std=gnu99 -g -pthread -lpthread
+CCFLAGS := 
 RM := rm -f
 CPU_NODE := 0
 NOW := $(shell date -u +%s)
@@ -52,6 +53,7 @@ all: benchmark.o
 	@echo "Object file created: benchmark.o"
 
 %.o: %.c
+	@echo $(CCFLAGS)
 	@str="Using: `$(CC) -v 2>&1 | tail -n 1`";\
 	len=$$(($${#str} + 5));\
 	range=$$(eval echo {1..$$len});\

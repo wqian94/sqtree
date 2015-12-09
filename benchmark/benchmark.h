@@ -28,7 +28,7 @@ Benchmarking suite utilities header
 #define rand Marsaglia_rand
 #define srand Marsaglia_srand
 #define random Marsaglia_random
-extern rlu_thread_data_t *rlu_self;
+extern __thread rlu_thread_data_t *rlu_self;
 
 typedef struct {
     bool on;

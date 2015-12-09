@@ -29,9 +29,10 @@ NTHREADS ?= 1
 # for HTM
 #ITM ?= rh_htm_gl_wt
 #HTM_LIB ?= /home/qian/sqtree/libitm.so
+#TM_PRELOAD := export ITM_DEFAULT_METHOD=$(ITM);export LD_PRELOAD=$(HTM_LIB) $$$$LD_PRELOAD;
 #TC_MALLOC ?= /home/qian/sqtree/libtcmalloc.so
 TC_MALLOC ?= ../libtcmalloc.so
-TM_PRELOAD := export ITM_DEFAULT_METHOD=$(ITM);export LD_PRELOAD=$(HTM_LIB):$(TC_MALLOC):$$$$LD_PRELOAD;
+TC_PRELOAD := export LD_PRELOAD=$(TC_MALLOC) $$$$LD_PRELOAD;
 
 # for toggling whether to run
 RUN ?= 1
@@ -145,9 +146,9 @@ benchmark-%-O3:
 
 .PHONY: benchmark-%
 benchmark-%:
-	cd ../benchmark;$(MAKE) -Be
+	cd ../benchmark;$(MAKE) -B
 	mkdir -p benchmarks/bin benchmarks/results
-	$(MAKE) -e run-benchmark-benchmark OBJS="$(ALL_OBJS) $*/Quadtree.o" CFLAGS="$(CFLAGS) -$(OFLAG)"
+	$(MAKE) run-benchmark-benchmark OBJS="$(ALL_OBJS) $*/Quadtree.o" CFLAGS="$(CFLAGS) -$(OFLAG)"
 
 .PHONY: run-benchmark-%
 run-benchmark-%: PRERUN += export NANOSECONDS=`date +%N`;
@@ -158,7 +159,7 @@ run-benchmark-%: $(OBJS) compile-% %.o
 	ln benchmarks/bin/test-$(OFLAG)-$(NOW) benchmarks/bin/test-$(OFLAG)-recent
 ifeq ($(RUN), 1)
 	touch benchmarks/results/test-$(OFLAG)-$(NOW).txt
-	$(TM_PRELOAD)targetlines=$$(expr $$(wc -l benchmarks/results/test-$(OFLAG)-$(NOW).txt | cut -f 1 -d ' ') + $(TRIALS));counter=1;while [ $$(wc -l benchmarks/results/test-$(OFLAG)-$(NOW).txt | cut -f 1 -d ' ') -lt $$targetlines ];do echo "[[ Running Trial $$counter ]]";$(PRERUN) timeout $(TIMEOUT) taskset -c 0-$$(expr $(NTHREADS) - 1) $(NUMACTL) benchmarks/bin/test-$(OFLAG)-$(NOW) $(POSTRUN);counter=$$(expr $$counter + 1);done
+	$(TM_PRELOAD)$(TC_PRELOAD)targetlines=$$(expr $$(wc -l benchmarks/results/test-$(OFLAG)-$(NOW).txt | cut -f 1 -d ' ') + $(TRIALS));counter=1;while [ $$(wc -l benchmarks/results/test-$(OFLAG)-$(NOW).txt | cut -f 1 -d ' ') -lt $$targetlines ];do echo "[[ Running Trial $$counter ]]";$(PRERUN) timeout $(TIMEOUT) taskset -c 0-$$(expr $(NTHREADS) - 1) $(NUMACTL) benchmarks/bin/test-$(OFLAG)-$(NOW) $(POSTRUN);counter=$$(expr $$counter + 1);done
 endif
 
 .PHONY: run-%

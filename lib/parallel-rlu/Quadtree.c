@@ -10,7 +10,7 @@ Parallel implementation of compressed skip quadtree using RLU
 #include "../Point.h"
 
 // rlu_self
-rlu_thread_data_t *rlu_self = NULL;
+__thread rlu_thread_data_t *rlu_self = NULL;
 
 // rand() functions
 #ifdef QUADTREE_TEST
