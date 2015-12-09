@@ -4,7 +4,7 @@ Testing suite for correctness of Quadtrees
 
 #include "test.h"
 
-extern __thread rlu_thread_data_t *rlu_self;
+//extern __thread rlu_thread_data_t *rlu_self;
 extern bool in_range(Node*, Point*);
 extern void Point_string(Point*, char*);
 

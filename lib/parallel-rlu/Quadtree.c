@@ -94,7 +94,7 @@ bool Quadtree_search_helper(Node *node, Point *p) {
 
     // if is a square, move to it and recurse
     if (node->children[quadrant]->is_square)
-        return Quadtree_search_helper(node->children[quadrant], p);
+        return Quadtree_search_helper((Node*)RLU_DEREF(rlu_self, node->children[quadrant]), p);
 
     // otherwise, we check if the child point matches, since it's a point node
     if (Point_equals(&node->children[quadrant]->center, p))
@@ -102,7 +102,7 @@ bool Quadtree_search_helper(Node *node, Point *p) {
 
     // if we're here, then we need to branch down a level
     if (node->down != NULL)
-        return Quadtree_search_helper(node->down, p);
+        return Quadtree_search_helper((Node*)RLU_DEREF(rlu_self, node->down), p);
 
     // here, we have nowhere else to search for, so we give up
     return false;
@@ -150,7 +150,7 @@ Node* Quadtree_add_helper(Node *node, Point *p, const uint64_t gap_depth) {
     Node *parent, *node_param = node;
     do {
         parent = node;
-        node = parent->children[get_quadrant(&parent->center, p)];
+        node = (Node*)RLU_DEREF(rlu_self, parent->children[get_quadrant(&parent->center, p)]);
     } while(node != NULL && node->is_square && in_range(node, p));
 
     // check for duplication
@@ -160,8 +160,8 @@ Node* Quadtree_add_helper(Node *node, Point *p, const uint64_t gap_depth) {
     // branch down a level if possible
     Node *down_node = NULL;
     if (parent->down != NULL)
-        if ((down_node = Quadtree_add_helper(parent->down, p,
-                (gap_depth > 0) && (gap_depth - 1))) == NULL)
+        if ((down_node = (Node*)RLU_DEREF(rlu_self, Quadtree_add_helper(parent->down, p,
+                (gap_depth > 0) && (gap_depth - 1)))) == NULL)
             return NULL;
 
     // if gap_depth is not zero, we shouldn't actually add anything
@@ -187,7 +187,7 @@ Node* Quadtree_add_helper(Node *node, Point *p, const uint64_t gap_depth) {
     // if it's not empty, that means there's already a node there...
     else {
         // grab the sibling-to-be
-        Node *sibling = parent->children[quadrant];
+        Node *sibling = (Node*)RLU_DEREF(rlu_self, parent->children[quadrant]);
 
         // create a new square to contain the sibling and the new node
         uint8_t square_quadrant = quadrant;
@@ -209,10 +209,10 @@ Node* Quadtree_add_helper(Node *node, Point *p, const uint64_t gap_depth) {
 
         // now, we need to find the down square to this square, if we're not on the last level
         if (parent->down != NULL) {
-            Node *down_square = parent->down;
+            Node *down_square = (Node*)RLU_DEREF(rlu_self, parent->down);
             while (!Point_equals(&down_square->center, &square->center) ||
                     abs(down_square->length - square->length) > PRECISION)
-                down_square = down_square->children[get_quadrant(&down_square->center, &square->center)];
+                down_square = (Node*)RLU_DEREF(rlu_self, down_square->children[get_quadrant(&down_square->center, &square->center)]);
             square->down = down_square;
             down_square->up = square;
         }
@@ -230,6 +230,7 @@ bool Quadtree_add(Quadtree *node, Point p) {
 
     while (rand() % 100 < 50) {
         if (node->up == NULL) {
+            node = (Node*)RLU_DEREF(rlu_self, node);
             node->up = Quadtree_init(node->length, node->center);
             node->up->down = node;
         }
@@ -243,7 +244,7 @@ bool Quadtree_add(Quadtree *node, Point p) {
         node = node->up;
     }
 
-    bool success = Quadtree_add_helper(node, &p, gap_depth) != NULL;
+    bool success = Quadtree_add_helper((Node*)RLU_DEREF(rlu_self, node), &p, gap_depth) != NULL;
 
     RLU_READER_UNLOCK(rlu_self);
 
@@ -289,8 +290,10 @@ bool Quadtree_remove_node(Node *node) {
                 return false;
 
             // if all goes well, we can relink
-            node->parent->children[get_quadrant(&node->parent->center, &node->center)] = child;
-            child->parent = node->parent;
+            Node *parent = (Node*)RLU_DEREF(rlu_self, node->parent);
+            child = (Node*)RLU_DEREF(rlu_self, child);
+            parent->children[get_quadrant(&parent->center, &node->center)] = child;
+            child->parent = parent;
             node->parent = NULL;
         }
 
@@ -298,7 +301,7 @@ bool Quadtree_remove_node(Node *node) {
     }
 
     // now, get rid of pointers from the parent
-    Node *parent = node->parent, *up = node->up, *down = node->down;
+    Node *parent = (Node*)RLU_DEREF(rlu_self, node->parent), *up = (Node*)RLU_DEREF(rlu_self, node->up), *down = (Node*)RLU_DEREF(rlu_self, node->down);
     if (parent != NULL && parent->children[get_quadrant(&parent->center, &node->center)] == node)
         parent->children[get_quadrant(&parent->center, &node->center)] = NULL;
 
@@ -353,7 +356,7 @@ bool Quadtree_remove_helper(Node *node, Point *p) {
     // if the target child is NULL, we try to drop down a level
     if (node->children[quadrant] == NULL) {
         if (node->down != NULL)
-            return Quadtree_remove_helper(node->down, p);
+            return Quadtree_remove_helper((Node*)RLU_DEREF(rlu_self, node->down), p);
         // otherwise, we're on the bottom-most level and just can't find the point
         else
             return false;
@@ -363,15 +366,15 @@ bool Quadtree_remove_helper(Node *node, Point *p) {
 
     // if is a square, move to it and recurse if in range
     if (node->children[quadrant]->is_square && in_range(node->children[quadrant], p))
-        return Quadtree_remove_helper(node->children[quadrant], p);
+        return Quadtree_remove_helper((Node*)RLU_DEREF(rlu_self, node->children[quadrant]), p);
 
     // otherwise, we check if the child point matches, since it's a point node
     if (Point_equals(&node->children[quadrant]->center, p))
-        return Quadtree_remove_node(node->children[quadrant]);
+        return Quadtree_remove_node((Node*)RLU_DEREF(rlu_self, node->children[quadrant]));
 
     // if we're here, then we need to branch down a level
     if (node->down != NULL)
-        return Quadtree_remove_helper(node->down, p);
+        return Quadtree_remove_helper((Node*)RLU_DEREF(rlu_self, node->down), p);
 
     // here, we have nowhere else to search for, so we give up
     return false;
@@ -384,7 +387,7 @@ bool Quadtree_remove(Quadtree *node, Point p) {
     while (node->up != NULL)
         node = node->up;
 
-    bool success = Quadtree_remove_helper(node, &p);
+    bool success = Quadtree_remove_helper((Node*)RLU_DEREF(rlu_self, node), &p);
 
     RLU_READER_UNLOCK(rlu_self);
 
