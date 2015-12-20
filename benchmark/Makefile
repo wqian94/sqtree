@@ -9,6 +9,8 @@ RM := rm -f
 CPU_NODE := 0
 NOW := $(shell date -u +%s)
 
+TC_MALLOC ?= ../libtcmalloc.so
+TC_PRELOAD := export LD_PRELOAD=$(TC_MALLOC) $$$$LD_PRELOAD;
 
 # to turn on compiling in parallel
 ifdef PARALLEL
@@ -61,7 +63,7 @@ all: benchmark.o
 	printf "\n## %s##\n" "$$str";\
 	printf "#%.s" $$range;\
 	printf "\n";
-	$(CC) $(CFLAGS) $(CCFLAGS) -c $< -o $@
+	$(TCPRELOAD) $(CC) $(CFLAGS) $(CCFLAGS) -c $< -o $@
 
 .PHONY: clean
 clean:

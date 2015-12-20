@@ -173,6 +173,8 @@ Node* Quadtree_add_helper(Node *node, Point *p, const uint64_t gap_depth) {
 
     if (down_node != NULL) {
         new_node->down = down_node;
+        if (!RLU_TRY_LOCK(rlu_self, &down_node))
+            return NULL;
         down_node->up = new_node;
     }
 
@@ -180,7 +182,9 @@ Node* Quadtree_add_helper(Node *node, Point *p, const uint64_t gap_depth) {
     register uint8_t quadrant = get_quadrant(&parent->center, p);
 
     // if the slot is empty, it's trivial
-    if (parent->children[quadrant] == NULL) {
+    if (parent->children[quadrant] == NULL)
+        if (!RLU_TRY_LOCK(rlu_self, &parent))
+            return NULL;
         parent->children[quadrant] = new_node;
         return new_node;
     }
@@ -226,6 +230,7 @@ Node* Quadtree_add_helper(Node *node, Point *p, const uint64_t gap_depth) {
 }
 
 bool Quadtree_add(Quadtree *node, Point p) {
+add_restart:
     RLU_READER_LOCK(rlu_self);
 
     while (rand() % 100 < 50) {
@@ -245,6 +250,11 @@ bool Quadtree_add(Quadtree *node, Point p) {
     }
 
     bool success = Quadtree_add_helper((Node*)RLU_DEREF(rlu_self, node), &p, gap_depth) != NULL;
+
+    if (!success) {
+        RLU_ABORT(rlu_self);
+        goto add_restart;
+    }
 
     RLU_READER_UNLOCK(rlu_self);
 
