@@ -79,12 +79,14 @@ static inline void Node_free(const Node *node) {
  * Returns whether p is in node.
  */
 bool Quadtree_search_helper(const Node * const node, const Point *p) {
+    Node *current = DEREF(node);
+
     if (!in_range(node, p))
         return false;
 
-    register uint8_t quadrant = get_quadrant(&node->center, p);
-    Node *child = DEREF(node->children[quadrant]);
-    Node *down = DEREF(node->down);
+    register uint8_t quadrant = get_quadrant(&current->center, p);
+    Node *child = DEREF(current->children[quadrant]);
+    Node *down = DEREF(current->down);
 
     // if the target child is NULL, we try to drop down a level
     if (child == NULL) {
@@ -114,21 +116,19 @@ bool Quadtree_search_helper(const Node * const node, const Point *p) {
 }
 
 bool Quadtree_search(const Quadtree * const node, const Point p) {
-    RLU_THREAD_INIT(rlu_self);
     RLU_READER_LOCK(rlu_self);
 
-    Node *current = (Quadtree*)DEREF(node);
+    Node *current = DEREF(node);
 
     if (current == NULL)
         return false;
 
     while (current->up != NULL)
-        current = current->up;
+        current = DEREF(current->up);
 
     bool found = Quadtree_search_helper(current, &p);
 
     RLU_READER_UNLOCK(rlu_self);
-    RLU_THREAD_FINISH(rlu_self);
 
     return found;
 }
@@ -234,6 +234,8 @@ Node* Quadtree_add_helper(const Node * const node, const Point * const p, const 
                     abs(down_square->length - square->length) > PRECISION) {
                 down_square_node = down_square->children[get_quadrant(&down_square->center, &square->center)];
                 down_square = DEREF(down_square_node);
+                if (!Node_valid(down_square))
+                    return NULL;
             }
             TRY_OR_FAIL(down_square);
             RLU_ASSIGN_PTR(rlu_self, &square->down, down_square_node);
@@ -249,8 +251,7 @@ Node* Quadtree_add_helper(const Node * const node, const Point * const p, const 
 }
 
 bool Quadtree_add(Quadtree * const node, const Point p) {
-    RLU_THREAD_INIT(rlu_self);
-
+    register uint8_t attempts_left = 10;
 add_restart:
     RLU_READER_LOCK(rlu_self);
 
@@ -284,11 +285,12 @@ add_restart:
     if (!success) {
 add_abort:
         RLU_ABORT(rlu_self);
-        goto add_restart;
+        if (--attempts_left)
+            goto add_restart;
     }
-
-    RLU_READER_UNLOCK(rlu_self);
-    RLU_THREAD_FINISH(rlu_self);
+    else {
+        RLU_READER_UNLOCK(rlu_self);
+    }
 
     return success;
 }
@@ -390,8 +392,6 @@ bool Quadtree_remove_node(const Node * const node) {
     }
 
     // finally, recurse on up and down
-    // TODO: if (Node_valid(up))
-    // TODO:     Quadtree_remove_node(up_node);
     if (Node_valid(down))
         Quadtree_remove_node(down_node);
 
@@ -447,7 +447,6 @@ bool Quadtree_remove_helper(Node * const node, const Point * const p) {
 }
 
 bool Quadtree_remove(Quadtree * const node, const Point p) {
-    RLU_THREAD_INIT(rlu_self);
     RLU_READER_LOCK(rlu_self);
 
     Node *current_node = (Node*)node, *current = DEREF(current_node);
@@ -459,7 +458,6 @@ bool Quadtree_remove(Quadtree * const node, const Point p) {
     bool success = Quadtree_remove_helper(current_node, &p);
 
     RLU_READER_UNLOCK(rlu_self);
-    RLU_THREAD_FINISH(rlu_self);
 
     return success;
 }

@@ -22,7 +22,7 @@ extern __thread rlu_thread_data_t *rlu_self;
 extern uint32_t Marsaglia_rand();
 #define rand() Marsaglia_rand()
 
-#define REFRESH(node) ((Node*)Quadtree_refresh(node))
+#define WRAP(statement) {RLU_THREAD_INIT(rlu_self);statement;RLU_THREAD_FINISH(rlu_self);}
 
 typedef struct {
     bool on;

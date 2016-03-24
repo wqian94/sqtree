@@ -222,7 +222,7 @@ void test_quadtree_add() {
     Point p6 = Point_from_array(coords);
 
     printf("\n---Quadtree_add One Node Test---\n");
-    assertTrue(Quadtree_add(q1, p2), "Quadtree_add(q1, p2)");
+    WRAP(assertTrue(Quadtree_add(q1, p2), "Quadtree_add(q1, p2)"));
     Node *q2 = q1->children[get_quadrant(&q1->center, &p2)];
 
     int count_q1_levels = 0;
@@ -241,7 +241,7 @@ void test_quadtree_add() {
     assertLong(5, count_q2_levels, buffer);
 
     printf("\n---Quadtree_add Conflicting Node Test---\n");
-    assertTrue(Quadtree_add(q1, p3), "Quadtree_add(q1, p3)");
+    WRAP(assertTrue(Quadtree_add(q1, p3), "Quadtree_add(q1, p3)"));
     Node *square1 = q1->children[get_quadrant(&q1->center, &p2)];
     for (i = 0; i < D; i++) coords[i] = 4;
     assertPoint(Point_from_array(coords), square1->center, "square1->center");
@@ -283,7 +283,7 @@ void test_quadtree_add() {
     assertLong(0, (unsigned long long)get_quadrant(&square1->center, &q2->center), buffer);
 
     printf("\n---Quadtree_add Inner Square Generation Test---\n");
-    assertTrue(Quadtree_add(q1, p4), "Quadtree_add(q1, p4)");
+    WRAP(assertTrue(Quadtree_add(q1, p4), "Quadtree_add(q1, p4)"));
     Node *square2 = NULL;
     if (square1->children[get_quadrant(&square1->center, &p4)] != NULL) {
         square2 = square1->children[get_quadrant(&square1->center, &p4)];
@@ -307,7 +307,7 @@ void test_quadtree_add() {
     }
 
     printf("\n---Quadtree_add Greater Depth Test---\n");
-    assertTrue(Quadtree_add(q1, p5), "Quadtree_add(q1, p5)");
+    WRAP(assertTrue(Quadtree_add(q1, p5), "Quadtree_add(q1, p5)"));
     sprintf(buffer, "(q1->children[%llu] != NULL)", (unsigned long long)get_quadrant(&q1->center, &p5));
     assertTrue(q1->children[get_quadrant(&q1->center, &p5)] != NULL, buffer);
     if (q1->children[get_quadrant(&q1->center, &p5)] != NULL) {
@@ -325,7 +325,7 @@ void test_quadtree_add() {
     }
 
     printf("\n---Quadtree_add Alternating Quadrant Test---\n");
-    assertTrue(Quadtree_add(q1, p6), "Quadtree_add(q1, p6)");
+    WRAP(assertTrue(Quadtree_add(q1, p6), "Quadtree_add(q1, p6)"));
     Node *square3 = NULL;
     if (square2 != NULL && square2->children[get_quadrant(&square2->center, &p6)] != NULL) {
         square3 = square2->children[get_quadrant(&square2->center, &p6)];
@@ -408,20 +408,20 @@ void test_quadtree_search() {
     for (i = 0; i < D; i++) coords[i] = 1.25;
     Point p7 = Point_from_array(coords);
 
-    assertTrue(Quadtree_add(q1, p2), "Quadtree_add(q1, p2)");
-    assertTrue(Quadtree_add(q1, p3), "Quadtree_add(q1, p3)");
-    assertTrue(Quadtree_add(q1, p4), "Quadtree_add(q1, p4)");
-    assertTrue(Quadtree_add(q1, p5), "Quadtree_add(q1, p5)");
-    assertTrue(Quadtree_add(q1, p6), "Quadtree_add(q1, p6)");
-    assertTrue(Quadtree_add(q1, p7), "Quadtree_add(q1, p7)");
+    WRAP(assertTrue(Quadtree_add(q1, p2), "Quadtree_add(q1, p2)"));
+    WRAP(assertTrue(Quadtree_add(q1, p3), "Quadtree_add(q1, p3)"));
+    WRAP(assertTrue(Quadtree_add(q1, p4), "Quadtree_add(q1, p4)"));
+    WRAP(assertTrue(Quadtree_add(q1, p5), "Quadtree_add(q1, p5)"));
+    WRAP(assertTrue(Quadtree_add(q1, p6), "Quadtree_add(q1, p6)"));
+    WRAP(assertTrue(Quadtree_add(q1, p7), "Quadtree_add(q1, p7)"));
 
-    assertFalse(Quadtree_search(q1, p1), "Quadtree_search(q1, p1)");  // because p1 isn't actually a data point
-    assertTrue(Quadtree_search(q1, p2), "Quadtree_search(q1, p2)");
-    assertTrue(Quadtree_search(q1, p3), "Quadtree_search(q1, p3)");
-    assertTrue(Quadtree_search(q1, p4), "Quadtree_search(q1, p4)");
-    assertTrue(Quadtree_search(q1, p5), "Quadtree_search(q1, p5)");
-    assertTrue(Quadtree_search(q1, p6), "Quadtree_search(q1, p6)");
-    assertTrue(Quadtree_search(q1, p7), "Quadtree_search(q1, p7)");
+    WRAP(assertFalse(Quadtree_search(q1, p1), "Quadtree_search(q1, p1)"));  // because p1 isn't actually a data point
+    WRAP(assertTrue(Quadtree_search(q1, p2), "Quadtree_search(q1, p2)"));
+    WRAP(assertTrue(Quadtree_search(q1, p3), "Quadtree_search(q1, p3)"));
+    WRAP(assertTrue(Quadtree_search(q1, p4), "Quadtree_search(q1, p4)"));
+    WRAP(assertTrue(Quadtree_search(q1, p5), "Quadtree_search(q1, p5)"));
+    WRAP(assertTrue(Quadtree_search(q1, p6), "Quadtree_search(q1, p6)"));
+    WRAP(assertTrue(Quadtree_search(q1, p7), "Quadtree_search(q1, p7)"));
 
     Quadtree_free(q1);
 }
@@ -454,36 +454,36 @@ void test_quadtree_remove() {
     for (i = 0; i < D; i++) coords[i] = 1.25;
     Point p7 = Point_from_array(coords);
 
-    assertTrue(Quadtree_add(q1, p2), "Quadtree_add(q1, p2)");
-    assertTrue(Quadtree_add(q1, p3), "Quadtree_add(q1, p3)");
-    assertTrue(Quadtree_add(q1, p4), "Quadtree_add(q1, p4)");
-    assertTrue(Quadtree_add(q1, p5), "Quadtree_add(q1, p5)");
-    assertTrue(Quadtree_add(q1, p6), "Quadtree_add(q1, p6)");
-    assertTrue(Quadtree_add(q1, p7), "Quadtree_add(q1, p7)");
+    WRAP(assertTrue(Quadtree_add(q1, p2), "Quadtree_add(q1, p2)"));
+    WRAP(assertTrue(Quadtree_add(q1, p3), "Quadtree_add(q1, p3)"));
+    WRAP(assertTrue(Quadtree_add(q1, p4), "Quadtree_add(q1, p4)"));
+    WRAP(assertTrue(Quadtree_add(q1, p5), "Quadtree_add(q1, p5)"));
+    WRAP(assertTrue(Quadtree_add(q1, p6), "Quadtree_add(q1, p6)"));
+    WRAP(assertTrue(Quadtree_add(q1, p7), "Quadtree_add(q1, p7)"));
 
-    assertTrue(Quadtree_search(q1, p2), "Quadtree_search(q1, p2)");
-    Quadtree_remove(q1, p2);
-    assertFalse(Quadtree_search(q1, p2), "Quadtree_search(q1, p2)");
+    WRAP(assertTrue(Quadtree_search(q1, p2), "Quadtree_search(q1, p2)"));
+    WRAP(Quadtree_remove(q1, p2));
+    WRAP(assertFalse(Quadtree_search(q1, p2), "Quadtree_search(q1, p2)"));
 
-    assertTrue(Quadtree_search(q1, p3), "Quadtree_search(q1, p3)");
-    Quadtree_remove(q1, p3);
-    assertFalse(Quadtree_search(q1, p3), "Quadtree_search(q1, p3)");
+    WRAP(assertTrue(Quadtree_search(q1, p3), "Quadtree_search(q1, p3)"));
+    WRAP(Quadtree_remove(q1, p3));
+    WRAP(assertFalse(Quadtree_search(q1, p3), "Quadtree_search(q1, p3)"));
 
-    assertTrue(Quadtree_search(q1, p4), "Quadtree_search(q1, p4)");
-    Quadtree_remove(q1, p4);
-    assertFalse(Quadtree_search(q1, p4), "Quadtree_search(q1, p4)");
+    WRAP(assertTrue(Quadtree_search(q1, p4), "Quadtree_search(q1, p4)"));
+    WRAP(Quadtree_remove(q1, p4));
+    WRAP(assertFalse(Quadtree_search(q1, p4), "Quadtree_search(q1, p4)"));
 
-    assertTrue(Quadtree_search(q1, p5), "Quadtree_search(q1, p5)");
-    Quadtree_remove(q1, p5);
-    assertFalse(Quadtree_search(q1, p5), "Quadtree_search(q1, p5)");
+    WRAP(assertTrue(Quadtree_search(q1, p5), "Quadtree_search(q1, p5)"));
+    WRAP(Quadtree_remove(q1, p5));
+    WRAP(assertFalse(Quadtree_search(q1, p5), "Quadtree_search(q1, p5)"));
 
-    assertTrue(Quadtree_search(q1, p6), "Quadtree_search(q1, p6)");
-    Quadtree_remove(q1, p6);
-    assertFalse(Quadtree_search(q1, p6), "Quadtree_search(q1, p6)");
+    WRAP(assertTrue(Quadtree_search(q1, p6), "Quadtree_search(q1, p6)"));
+    WRAP(Quadtree_remove(q1, p6));
+    WRAP(assertFalse(Quadtree_search(q1, p6), "Quadtree_search(q1, p6)"));
 
-    assertTrue(Quadtree_search(q1, p7), "Quadtree_search(q1, p7)");
-    Quadtree_remove(q1, p7);
-    assertFalse(Quadtree_search(q1, p7), "Quadtree_search(q1, p7)");
+    WRAP(assertTrue(Quadtree_search(q1, p7), "Quadtree_search(q1, p7)"));
+    WRAP(Quadtree_remove(q1, p7));
+    WRAP(assertFalse(Quadtree_search(q1, p7), "Quadtree_search(q1, p7)"));
 
     Quadtree_free(q1);
 }
@@ -514,36 +514,36 @@ void test_randomized() {
     for (i = 0; i < D; i++) coords[i] = 1.25;
     Point p7 = Point_from_array(coords);
 
-    assertTrue(Quadtree_add(q1, p2), "Quadtree_add(q1, p2)");
-    assertTrue(Quadtree_add(q1, p3), "Quadtree_add(q1, p3)");
-    assertTrue(Quadtree_add(q1, p4), "Quadtree_add(q1, p4)");
-    assertTrue(Quadtree_add(q1, p5), "Quadtree_add(q1, p5)");
-    assertTrue(Quadtree_add(q1, p6), "Quadtree_add(q1, p6)");
-    assertTrue(Quadtree_add(q1, p7), "Quadtree_add(q1, p7)");
+    WRAP(assertTrue(Quadtree_add(q1, p2), "Quadtree_add(q1, p2)"));
+    WRAP(assertTrue(Quadtree_add(q1, p3), "Quadtree_add(q1, p3)"));
+    WRAP(assertTrue(Quadtree_add(q1, p4), "Quadtree_add(q1, p4)"));
+    WRAP(assertTrue(Quadtree_add(q1, p5), "Quadtree_add(q1, p5)"));
+    WRAP(assertTrue(Quadtree_add(q1, p6), "Quadtree_add(q1, p6)"));
+    WRAP(assertTrue(Quadtree_add(q1, p7), "Quadtree_add(q1, p7)"));
 
-    assertTrue(Quadtree_search(q1, p2), "Quadtree_search(q1, p2)");
-    Quadtree_remove(q1, p2);
-    assertFalse(Quadtree_search(q1, p2), "Quadtree_search(q1, p2)");
+    WRAP(assertTrue(Quadtree_search(q1, p2), "Quadtree_search(q1, p2)"));
+    WRAP(Quadtree_remove(q1, p2));
+    WRAP(assertFalse(Quadtree_search(q1, p2), "Quadtree_search(q1, p2)"));
 
-    assertTrue(Quadtree_search(q1, p3), "Quadtree_search(q1, p3)");
-    Quadtree_remove(q1, p3);
-    assertFalse(Quadtree_search(q1, p3), "Quadtree_search(q1, p3)");
+    WRAP(assertTrue(Quadtree_search(q1, p3), "Quadtree_search(q1, p3)"));
+    WRAP(Quadtree_remove(q1, p3));
+    WRAP(assertFalse(Quadtree_search(q1, p3), "Quadtree_search(q1, p3)"));
 
-    assertTrue(Quadtree_search(q1, p4), "Quadtree_search(q1, p4)");
-    Quadtree_remove(q1, p4);
-    assertFalse(Quadtree_search(q1, p4), "Quadtree_search(q1, p4)");
+    WRAP(assertTrue(Quadtree_search(q1, p4), "Quadtree_search(q1, p4)"));
+    WRAP(Quadtree_remove(q1, p4));
+    WRAP(assertFalse(Quadtree_search(q1, p4), "Quadtree_search(q1, p4)"));
 
-    assertTrue(Quadtree_search(q1, p5), "Quadtree_search(q1, p5)");
-    Quadtree_remove(q1, p5);
-    assertFalse(Quadtree_search(q1, p5), "Quadtree_search(q1, p5)");
+    WRAP(assertTrue(Quadtree_search(q1, p5), "Quadtree_search(q1, p5)"));
+    WRAP(Quadtree_remove(q1, p5));
+    WRAP(assertFalse(Quadtree_search(q1, p5), "Quadtree_search(q1, p5)"));
 
-    assertTrue(Quadtree_search(q1, p6), "Quadtree_search(q1, p6)");
-    Quadtree_remove(q1, p6);
-    assertFalse(Quadtree_search(q1, p6), "Quadtree_search(q1, p6)");
+    WRAP(assertTrue(Quadtree_search(q1, p6), "Quadtree_search(q1, p6)"));
+    WRAP(Quadtree_remove(q1, p6));
+    WRAP(assertFalse(Quadtree_search(q1, p6), "Quadtree_search(q1, p6)"));
 
-    assertTrue(Quadtree_search(q1, p7), "Quadtree_search(q1, p7)");
-    Quadtree_remove(q1, p7);
-    assertFalse(Quadtree_search(q1, p7), "Quadtree_search(q1, p7)");
+    WRAP(assertTrue(Quadtree_search(q1, p7), "Quadtree_search(q1, p7)"));
+    WRAP(Quadtree_remove(q1, p7));
+    WRAP(assertFalse(Quadtree_search(q1, p7), "Quadtree_search(q1, p7)"));
 
     Quadtree_free(q1);
 }

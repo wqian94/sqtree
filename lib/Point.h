@@ -16,8 +16,6 @@ Point
 #define D DIMENSIONS
 #endif
 
-extern __thread rlu_thread_data_t *rlu_self;
-
 /**
  * struct Point_t
  *

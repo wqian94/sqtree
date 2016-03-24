@@ -193,7 +193,7 @@ void test_random(const uint64_t seconds) {
     // initialize RLU
 
     // type: FINE/COARSE, max_write_sets: 1 if COARSE
-    RLU_INIT(RLU_TYPE_FINE_GRAINED, nthreads);
+    RLU_INIT(RLU_TYPE_FINE_GRAINED, nthreads + 1);
 
     rlu_self = (rlu_thread_data_t*)malloc(sizeof(*rlu_self));
 
