@@ -64,7 +64,7 @@ Point Point_from_array(float64_t data[D]);
  *
  * Returns a value <0 if a < b, =0 if a == b, and >0 if a > b.
  */
-int8_t Point_compare(Point *a, Point *b);
+int8_t Point_compare(const Point *a, const Point *b);
 
 /**
  * Point_equals
@@ -77,7 +77,7 @@ int8_t Point_compare(Point *a, Point *b);
  *
  * Returns true if the two points are equal, up to precision error, and false otherwise.
  */
-safe bool Point_equals(Point *a, Point *b);
+safe bool Point_equals(const Point *a, const Point *b);
 
 /**
  * Point_copy
@@ -87,9 +87,9 @@ safe bool Point_equals(Point *a, Point *b);
  * from - the point to copy from
  * to - the point to copy to
  */
-safe void Point_copy(Point *from, Point *to);
+safe void Point_copy(const Point *from, Point *to);
 
-static void Point_string(Point *p, char *buffer) {
+static void Point_string(const Point *p, char *buffer) {
     sprintf(buffer, "Point(%lf", p->data[0]);
     register uint64_t i;
     for (i = 1; i < D; i++) {

@@ -9,6 +9,9 @@ Naive serial implementation of compressed skip quadtree
 #include "../Quadtree.h"
 #include "../Point.h"
 
+// rlu_self, included to make compiler happy
+__thread rlu_thread_data_t *rlu_self = NULL;
+
 // rand() functions
 #ifdef QUADTREE_TEST
 extern uint32_t test_rand();
@@ -25,7 +28,7 @@ extern void Marsaglia_srand(uint32_t);
 uint64_t QUADTREE_NODE_COUNT = 0;
 #endif
 
-Node* Node_init(float64_t length, Point center) {
+Node* Node_init(const float64_t length, const Point center) {
     Node *node = (Node*)malloc(sizeof(Node));
     node->is_square = false;
     node->length = length;
@@ -43,7 +46,7 @@ Node* Node_init(float64_t length, Point center) {
     return node;
 }
 
-Quadtree* Quadtree_init(float64_t length, Point center) {
+Quadtree* Quadtree_init(const float64_t length, const Point center) {
     Quadtree *qtree = Node_init(length, center);
     qtree->is_square = true;
     return qtree;
@@ -56,7 +59,7 @@ Quadtree* Quadtree_init(float64_t length, Point center) {
  *
  * node - the node to be freed
  */
-static inline void Node_free(Node *node) {
+static inline void Node_free(Node * const node) {
     free((void*)node);
 }
 
@@ -72,7 +75,7 @@ static inline void Node_free(Node *node) {
  *
  * Returns whether p is in node.
  */
-bool Quadtree_search_helper(Node *node, Point *p) {
+bool Quadtree_search_helper(Node * const node, const Point *p) {
     if (!in_range(node, p))
         return false;
 
@@ -105,14 +108,16 @@ bool Quadtree_search_helper(Node *node, Point *p) {
     return false;
 }
 
-bool Quadtree_search(Quadtree *node, Point p) {
-    if (node == NULL)
+bool Quadtree_search(const Quadtree * const node, const Point p) {
+    Node *current = (Node*)node;
+
+    if (current == NULL)
         return false;
 
-    while (node->up != NULL)
-        node = node->up;
+    while (current->up != NULL)
+        current = current->up;
 
-    return Quadtree_search_helper(node, &p);
+    return Quadtree_search_helper(current, &p);
 }
 
 /*
@@ -131,7 +136,7 @@ bool Quadtree_search(Quadtree *node, Point p) {
  *
  * Returns the corresponding node, one level lower, or NULL if the action failed.
  */
-Node* Quadtree_add_helper(Node *node, Point *p, const uint64_t gap_depth) {
+Node* Quadtree_add_helper(Node * node, const Point * const p, const uint64_t gap_depth) {
     if (!in_range(node, p))
         return NULL;
 
@@ -150,7 +155,7 @@ Node* Quadtree_add_helper(Node *node, Point *p, const uint64_t gap_depth) {
     Node *down_node = NULL;
     if (parent->down != NULL)
         if ((down_node = Quadtree_add_helper(parent->down, p,
-                (gap_depth > 0) && (gap_depth - 1))) == NULL)
+                (gap_depth > 0) & (gap_depth - 1))) == NULL)
             return NULL;
 
     // if gap_depth is not zero, we shouldn't actually add anything
@@ -214,23 +219,25 @@ Node* Quadtree_add_helper(Node *node, Point *p, const uint64_t gap_depth) {
     return new_node;
 }
 
-bool Quadtree_add(Quadtree *node, Point p) {
+bool Quadtree_add(Quadtree * const node, const Point p) {
+    Node *current = node;
+
     while (rand() % 100 < 50) {
-        if (node->up == NULL) {
-            node->up = Quadtree_init(node->length, node->center);
-            node->up->down = node;
+        if (current->up == NULL) {
+            current->up = Quadtree_init(current->length, current->center);
+            current->up->down = current;
         }
-        node = node->up;
+        current = current->up;
     }
     
     register uint64_t gap_depth = 0;  // number of layers to ignore when inserting
 
-    while (node->up != NULL) {
+    while (current->up != NULL) {
         gap_depth++;
-        node = node->up;
+        current = current->up;
     }
 
-    return Quadtree_add_helper(node, &p, gap_depth) != NULL;
+    return Quadtree_add_helper(current, &p, gap_depth) != NULL;
 }
 
 /*
@@ -245,7 +252,7 @@ bool Quadtree_add(Quadtree *node, Point p) {
  *
  * Returns true if removal is successful, false otherwise.
  */
-bool Quadtree_remove_node(Node *node) {
+bool Quadtree_remove_node(Node * const node) {
     if (node->down == NULL && node->parent == NULL)
         return false;
 
@@ -327,7 +334,7 @@ bool Quadtree_remove_node(Node *node) {
  *
  * Returns true if the node was successfully removed, false if not.
  */
-bool Quadtree_remove_helper(Node *node, Point *p) {
+bool Quadtree_remove_helper(Node * const node, const Point * const p) {
     if (!in_range(node, p))
         return false;
 
@@ -361,11 +368,13 @@ bool Quadtree_remove_helper(Node *node, Point *p) {
  
 }
 
-bool Quadtree_remove(Quadtree *node, Point p) {
-    while (node->up != NULL)
-        node = node->up;
+bool Quadtree_remove(Quadtree * const node, const Point p) {
+    Node *current = node;
 
-    return Quadtree_remove_helper(node, &p);
+    while (current->up != NULL)
+        current = current->up;
+
+    return Quadtree_remove_helper(current, &p);
 }
 
 /*
@@ -381,7 +390,7 @@ bool Quadtree_remove(Quadtree *node, Point p) {
  *
  * Returns whether freedom of the (sub)tree start at this node was successful.
  */
-bool Quadtree_free_helper(Node *node, QuadtreeFreeResult *result) {
+bool Quadtree_free_helper(Node * const node, QuadtreeFreeResult * const result) {
     bool success = true;
     if (node->is_square) {
         register uint64_t i;
@@ -407,16 +416,18 @@ bool Quadtree_free_helper(Node *node, QuadtreeFreeResult *result) {
     return success;
 }
 
-QuadtreeFreeResult Quadtree_free(Quadtree *root) {
+QuadtreeFreeResult Quadtree_free(Quadtree * const root) {
+    Node *current = (Node*)root;
+
     QuadtreeFreeResult result = (QuadtreeFreeResult){ .total = 0, .leaf = 0, .levels = 0 };
 
-    while (root->up != NULL)
-        root = root->up;
+    while (current->up != NULL)
+        current = current->up;
 
-    while (root != NULL) {
-        Node *next_root = root->down;
-        result.levels += Quadtree_free_helper(root, &result);
-        root = next_root;
+    while (current != NULL) {
+        Node *next_current = current->down;
+        result.levels += Quadtree_free_helper(current, &result);
+        current = next_current;
     }
 
     return result;

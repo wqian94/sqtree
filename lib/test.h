@@ -22,6 +22,8 @@ extern __thread rlu_thread_data_t *rlu_self;
 extern uint32_t Marsaglia_rand();
 #define rand() Marsaglia_rand()
 
+#define REFRESH(node) ((Node*)Quadtree_refresh(node))
+
 typedef struct {
     bool on;
     uint32_t *food;

@@ -79,7 +79,7 @@ typedef struct QuadtreeFreeResult_t {
  *
  * Returns a pointer to the created node.
  */
-Node* Node_init(float64_t length, Point center);
+Node* Node_init(const float64_t length, const Point center);
 #endif
 
 /*
@@ -96,7 +96,7 @@ Node* Node_init(float64_t length, Point center);
  *
  * Returns a pointer to the created node.
  */
-Quadtree* Quadtree_init(float64_t length, Point center);
+Quadtree* Quadtree_init(const float64_t length, const Point center);
 
 #ifdef PARALLEL
 /*
@@ -176,7 +176,7 @@ int Quadtree_parallel_remove(pthread_t *pthread, pthread_attr_t *pthread_attr,
  *
  * Returns whether p is in the quadtree represented by node.
  */
-bool Quadtree_search(Quadtree *node, Point p);
+bool Quadtree_search(const Quadtree * const node, const Point p);
 
 /*
  * Quadtree_add
@@ -191,7 +191,7 @@ bool Quadtree_search(Quadtree *node, Point p);
  *
  * Returns whether the add was successful.
  */
-bool Quadtree_add(Quadtree *node, Point p);
+bool Quadtree_add(Quadtree * const node, const Point p);
 
 /*
  * Quadtree_remove
@@ -204,7 +204,7 @@ bool Quadtree_add(Quadtree *node, Point p);
  * Returns whether the remove was successful: false typically indicates that the node
  * wasn't in the tree to begin with.
  */
-bool Quadtree_remove(Quadtree *node, Point p);
+bool Quadtree_remove(Quadtree * const node, const Point p);
 
 /*bool Quadtree_search(Quadtree *node, Point p, int64_t *lock_count, uint64_t index);
 bool Quadtree_add(Quadtree *node, Point p, int64_t *lock_count, uint64_t index);
@@ -222,7 +222,7 @@ bool Quadtree_remove(Quadtree *node, Point p, int64_t *lock_count, uint64_t inde
  *
  * Returns a QuadtreeFreeResult.
  */
-QuadtreeFreeResult Quadtree_free(Quadtree *root);
+QuadtreeFreeResult Quadtree_free(Quadtree * const root);
 
 /*
  * Node_valid
@@ -234,7 +234,7 @@ QuadtreeFreeResult Quadtree_free(Quadtree *root);
  *
  * Returns whether the node is valid for use.
  */
-static inline bool Node_valid(Node *node) {
+static inline bool Node_valid(const Node * const node) {
     return node != NULL;
 }
 
@@ -250,7 +250,7 @@ static inline bool Node_valid(Node *node) {
  *
  * Returns whether p is within the boundaries of n.
  */
-static bool in_range(Node *n, Point *p) {
+static bool in_range(const Node * const n, const Point * const p) {
     /*return n->center->data[0] - n->length / 2 <= p->data[0] &&
         n->center->data[0] + n->length / 2 > p->data[0] &&
         n->center->data[1] - n->length / 2 <= p->data[1] &&
@@ -277,7 +277,7 @@ static bool in_range(Node *n, Point *p) {
  *
  * Returns the quadrant that p is in, relative to origin.
  */
-static uint64_t get_quadrant(Point *origin, Point *p) {
+static uint64_t get_quadrant(const Point * const origin, const Point * const p) {
     //return (p->data[0] >= origin->data[0]) + 2 * (p->data[1] >= origin->data[1]);
     register uint64_t i;
     uint64_t quadrant = 0;
@@ -297,7 +297,7 @@ static uint64_t get_quadrant(Point *origin, Point *p) {
  *
  * Returns the center point for the given quadrant of node.
  */
-static Point get_new_center(Node *node, uint64_t quadrant) {
+static Point get_new_center(const Node * const node, const uint64_t quadrant) {
     Point p;
     register uint64_t i;
     for (i = 0; i < D; i++)
@@ -314,7 +314,7 @@ static Point get_new_center(Node *node, uint64_t quadrant) {
  * node - the node to write
  * buffer - the buffer to write to
  */
-static inline void Node_string(Node *node, char *buffer) {
+static inline void Node_string(const Node * const node, char * const buffer) {
     char pbuf[15 * D];
     Point_string(&node->center, pbuf);
     sprintf(buffer, "Node{id = %llu, is_square = %s, center = %s, length = %lf, parent = %s, up = %s, down = %s, children = {%s",
@@ -336,8 +336,8 @@ static inline void Node_string(Node *node, char *buffer) {
 #endif
 
 // debugging function
-extern void Point_string(Point*, char*);
-static void print(Node *n) {
+extern void Point_string(const Point * const , char * const);
+static void print(const Node * const n) {
     if (n == NULL)
         printf("NULL\n");
     else {
