@@ -32,7 +32,7 @@ NTHREADS ?= 1
 #TM_PRELOAD := export ITM_DEFAULT_METHOD=$(ITM);export LD_PRELOAD=$(HTM_LIB) $$$$LD_PRELOAD;
 #TC_MALLOC ?= /home/qian/sqtree/libtcmalloc.so
 TC_MALLOC ?= ../libtcmalloc.so
-TC_PRELOAD := export LD_PRELOAD=$(TC_MALLOC) $$$$LD_PRELOAD;
+TC_PRELOAD := export LD_PRELOAD=$(TC_MALLOC) $$LD_PRELOAD;
 
 # for toggling whether to run
 RUN ?= 1
@@ -147,6 +147,7 @@ benchmark-%-O3:
 .PHONY: benchmark-%
 benchmark-%:
 	cd ../benchmark;$(MAKE) -B
+	if [ ! -f benchmark.o ]; then ln -s ../benchmark/benchmark.o .; fi
 	mkdir -p benchmarks/bin benchmarks/results
 	$(MAKE) run-benchmark-benchmark OBJS="$(ALL_OBJS) $*/Quadtree.o" CFLAGS="$(CFLAGS) -$(OFLAG)"
 
